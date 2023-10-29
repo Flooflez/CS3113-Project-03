@@ -5,7 +5,7 @@
 #define NUMBER_OF_ENEMIES 3
 #define FIXED_TIMESTEP 0.0166666f
 #define ACC_OF_GRAVITY -0.5f
-#define PLATFORM_COUNT 5
+#define PLATFORM_COUNT 6
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -157,10 +157,12 @@ void initialise()
     // ————— PLATFORM ————— //
     g_game_state.platforms = new Entity[PLATFORM_COUNT];
 
-    g_game_state.platforms[0].set_position(glm::vec3(0.0f, -2.4f, 0.0f));
-    g_game_state.platforms[1].set_position(glm::vec3(1.0f, -2.0f, 0.0f));
-    g_game_state.platforms[2].set_position(glm::vec3(2.0f, -2.4f, 0.0f));
-    g_game_state.platforms[3].set_position(glm::vec3(1.0f, 1.0f, 0.0f));
+    g_game_state.platforms[0].set_position(glm::vec3(-0.1f, -2.25f, 0.0f));
+    g_game_state.platforms[1].set_position(glm::vec3(0.77f, -1.7f, 0.0f));
+    g_game_state.platforms[2].set_position(glm::vec3(2.1f, -2.58f, 0.0f));
+    g_game_state.platforms[3].set_position(glm::vec3(1.6f, -2.58f, 0.0f));
+    g_game_state.platforms[4].set_position(glm::vec3(3.6f, -3.07f, 0.0f));
+    g_game_state.platforms[5].set_position(glm::vec3(4.7f, -1.92f, 0.0f));
 
 
     for (int i = 0; i < PLATFORM_COUNT; i++)
@@ -319,7 +321,7 @@ void render()
     g_game_state.player->render(&g_shader_program);
 
     // ————— PLATFORM ————— //
-    for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
+    //for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
 
     // ————— GENERAL ————— //
     SDL_GL_SwapWindow(g_display_window);
