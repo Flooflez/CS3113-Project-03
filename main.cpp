@@ -299,9 +299,6 @@ void process_input()
 {
     // VERY IMPORTANT: If nothing is pressed, we don't want to go anywhere
     g_game_state.player->set_movement(glm::vec3(0.0f));
-    g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
-    g_game_state.player->set_height(0.5f);
-    g_game_state.player->set_width(0.3f);
 
     SDL_Event event;
     while (SDL_PollEvent(&event))
