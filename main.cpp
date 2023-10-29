@@ -6,7 +6,7 @@
 #define FIXED_TIMESTEP 0.0166666f
 #define ACC_OF_GRAVITY -0.5f
 #define PLATFORM_COUNT 6
-#define DEATH_BOX_COUNT 16
+#define DEATH_BOX_COUNT 20
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -116,6 +116,7 @@ GLuint load_texture(const char* filepath)
 void end_game() {
     g_game_over = true;
     g_game_state.player->m_texture_id = load_texture(BOOM_FILEPATH);
+    g_game_state.player->update_model_matrix();
 }
 
 void initialise()
@@ -157,7 +158,7 @@ void initialise()
     g_game_state.player->set_speed(0.2f);
     g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
     g_game_state.player->set_height(0.5f);
-    g_game_state.player->set_width(0.5f);
+    g_game_state.player->set_width(0.3f);
 
 
     // ————— PLATFORM ————— //
@@ -226,6 +227,23 @@ void initialise()
     g_game_state.deathboxes[12].set_position(glm::vec3(2.65f, -2.4f, 0.0f));
     g_game_state.deathboxes[12].set_scale(glm::vec3(0.4f, 1.0f, 0.0f));
     g_game_state.deathboxes[12].set_width(0.4f);
+
+    g_game_state.deathboxes[13].set_position(glm::vec3(3.0f, -2.75f, 0.0f));
+    g_game_state.deathboxes[13].set_scale(glm::vec3(0.4f, 1.0f, 0.0f));
+    g_game_state.deathboxes[13].set_width(0.4f);
+
+    g_game_state.deathboxes[14].set_position(glm::vec3(3.22f, -3.08f, 0.0f));
+    g_game_state.deathboxes[14].set_scale(glm::vec3(0.4f, 1.0f, 0.0f));
+    g_game_state.deathboxes[14].set_width(0.4f);
+
+    g_game_state.deathboxes[15].set_position(glm::vec3(4.3f, -2.8f, 0.0f));
+
+    g_game_state.deathboxes[16].set_position(glm::vec3(4.6f, -2.3f, 0.0f));
+
+    g_game_state.deathboxes[17].set_position(glm::vec3(4.4f, -2.6f, 0.0f));
+
+    g_game_state.deathboxes[18].set_position(glm::vec3(-4.0f, -3.5f, 0.0f));
+    g_game_state.deathboxes[19].set_position(glm::vec3(-3.5f, -2.8f, 0.0f));
 
 
     for (int i = 0; i < DEATH_BOX_COUNT; i++)
@@ -348,14 +366,16 @@ void update()
     while (delta_time >= FIXED_TIMESTEP)
     {
         // Notice that we're using FIXED_TIMESTEP as our delta time
-        g_game_state.player->update(FIXED_TIMESTEP, g_game_state.platforms, PLATFORM_COUNT);
+        if (!g_game_over) {
+            g_game_state.player->update(FIXED_TIMESTEP, g_game_state.platforms, PLATFORM_COUNT);
 
-        for (int i = 0; i < DEATH_BOX_COUNT; i++) {
-            if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
-                end_game();
+            for (int i = 0; i < DEATH_BOX_COUNT; i++) {
+                if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
+                    end_game();
+                }
             }
         }
-
+        
         g_game_ambience.particle1->update(FIXED_TIMESTEP, nullptr, 0);
         g_game_ambience.particle2->update(FIXED_TIMESTEP, nullptr, 0);
 
@@ -378,10 +398,11 @@ void render()
     // ————— GENERAL ————— //
     glClear(GL_COLOR_BUFFER_BIT);
     g_game_ambience.background->render(&g_shader_program);
-    for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
-    g_game_ambience.ground->render(&g_shader_program);
+   
     g_game_ambience.particle1->render(&g_shader_program);
     g_game_ambience.particle2->render(&g_shader_program);
+    g_game_ambience.ground->render(&g_shader_program);
+
 
 
     // ————— PLAYER ————— //
@@ -389,7 +410,8 @@ void render()
 
     // ————— PLATFORM ————— //
     //for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
-
+    //for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
+    
     
 
     // ————— GENERAL ————— //
