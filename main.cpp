@@ -6,7 +6,7 @@
 #define FIXED_TIMESTEP 0.0166666f
 #define ACC_OF_GRAVITY -0.5f
 #define PLATFORM_COUNT 6
-#define DEATH_BOX_COUNT 13
+#define DEATH_BOX_COUNT 16
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -206,6 +206,27 @@ void initialise()
 
     g_game_state.deathboxes[7].set_position(glm::vec3(-0.87f, -1.9f, 0.0f));
 
+    g_game_state.deathboxes[8].set_position(glm::vec3(0.55f, -2.15f, 0.0f));
+    g_game_state.deathboxes[8].set_scale(glm::vec3(0.5f, 1.0f, 0.0f));
+    g_game_state.deathboxes[8].set_width(0.5f);
+
+    g_game_state.deathboxes[9].set_position(glm::vec3(1.0f, -2.0f, 0.0f));
+    g_game_state.deathboxes[9].set_scale(glm::vec3(0.5f, 1.0f, 0.0f));
+    g_game_state.deathboxes[9].set_width(0.5f);
+
+
+    g_game_state.deathboxes[10].set_position(glm::vec3(1.17f, -2.3f, 0.0f));
+    g_game_state.deathboxes[10].set_scale(glm::vec3(0.5f, 1.0f, 0.0f));
+    g_game_state.deathboxes[10].set_width(0.5f);
+
+    g_game_state.deathboxes[11].set_position(glm::vec3(2.6f, -2.6f, 0.0f));
+    g_game_state.deathboxes[11].set_scale(glm::vec3(0.8f, 1.0f, 0.0f));
+    g_game_state.deathboxes[11].set_width(0.8f);
+
+    g_game_state.deathboxes[12].set_position(glm::vec3(2.65f, -2.4f, 0.0f));
+    g_game_state.deathboxes[12].set_scale(glm::vec3(0.4f, 1.0f, 0.0f));
+    g_game_state.deathboxes[12].set_width(0.4f);
+
 
     for (int i = 0; i < DEATH_BOX_COUNT; i++)
     {
@@ -357,7 +378,7 @@ void render()
     // ————— GENERAL ————— //
     glClear(GL_COLOR_BUFFER_BIT);
     g_game_ambience.background->render(&g_shader_program);
-
+    for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
     g_game_ambience.ground->render(&g_shader_program);
     g_game_ambience.particle1->render(&g_shader_program);
     g_game_ambience.particle2->render(&g_shader_program);
@@ -369,7 +390,7 @@ void render()
     // ————— PLATFORM ————— //
     //for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
 
-    for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
+    
 
     // ————— GENERAL ————— //
     SDL_GL_SwapWindow(g_display_window);
