@@ -4,7 +4,7 @@
 #define GL_GLEXT_PROTOTYPES 1
 #define NUMBER_OF_ENEMIES 3
 #define FIXED_TIMESTEP 0.0166666f
-#define ACC_OF_GRAVITY -0.5f
+#define ACC_OF_GRAVITY -0.25f
 #define PLATFORM_COUNT 6
 #define DEATH_BOX_COUNT 20
 
@@ -27,6 +27,7 @@
 struct GameState
 {
     Entity* player;
+    Entity* start_platform;
     Entity* platforms;
     Entity* deathboxes;
 };
@@ -113,10 +114,14 @@ GLuint load_texture(const char* filepath)
     return textureID;
 }
 
-void end_game() {
+void lose_game() {
     g_game_over = true;
     g_game_state.player->m_texture_id = load_texture(BOOM_FILEPATH);
     g_game_state.player->update_model_matrix();
+}
+
+void win_game() {
+    g_game_over = true;
 }
 
 void initialise()
@@ -151,14 +156,14 @@ void initialise()
     // ————— PLAYER ————— //
     // Existing
     g_game_state.player = new Entity();
-    g_game_state.player->set_position(glm::vec3(0.0f));
+    g_game_state.player->set_position(glm::vec3(-3.5f, -1.7f, 0.0f));
     g_game_state.player->set_scale(glm::vec3(0.5f));
     g_game_state.player->set_movement(glm::vec3(0.0f));
     g_game_state.player->set_acceleration(glm::vec3(0.0f, ACC_OF_GRAVITY * 0.1, 0.0f));
     g_game_state.player->set_speed(0.2f);
     g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
     g_game_state.player->set_height(0.5f);
-    g_game_state.player->set_width(0.3f);
+    g_game_state.player->set_width(0.26f);
 
 
     // ————— PLATFORM ————— //
@@ -251,7 +256,13 @@ void initialise()
         g_game_state.deathboxes[i].update_model_matrix();
     }
 
-    
+    // ————— START PLATFORM ————— //
+    g_game_state.start_platform = new Entity();
+    g_game_state.start_platform->set_position(glm::vec3(-3.5f, -2.2f, 0.0f));
+    g_game_state.start_platform->set_scale(glm::vec3(0.5f));
+    g_game_state.start_platform->set_height(0.5f);
+    g_game_state.start_platform->set_width(0.5f);
+    g_game_state.start_platform->update_model_matrix();
 
     // ————— GENERAL ————— //
     glEnable(GL_BLEND);
@@ -288,6 +299,9 @@ void process_input()
 {
     // VERY IMPORTANT: If nothing is pressed, we don't want to go anywhere
     g_game_state.player->set_movement(glm::vec3(0.0f));
+    g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
+    g_game_state.player->set_height(0.5f);
+    g_game_state.player->set_width(0.3f);
 
     SDL_Event event;
     while (SDL_PollEvent(&event))
@@ -319,11 +333,11 @@ void process_input()
 
     if (key_state[SDL_SCANCODE_LEFT])
     {
-        g_game_state.player->set_acceleration_x(-0.5f);
+        g_game_state.player->set_acceleration_x(-0.15f);
     }
     else if (key_state[SDL_SCANCODE_RIGHT])
     {
-        g_game_state.player->set_acceleration_x(0.5f);
+        g_game_state.player->set_acceleration_x(0.15f);
     }
     else {
         g_game_state.player->set_acceleration_x(0.0f);
@@ -331,7 +345,7 @@ void process_input()
     
     
     if (key_state[SDL_SCANCODE_SPACE]) {
-        g_game_state.player->set_acceleration_y(0.5f);
+        g_game_state.player->set_acceleration_y(0.2f);
     }
     else {
         g_game_state.player->set_acceleration_y(ACC_OF_GRAVITY);
@@ -367,11 +381,16 @@ void update()
     {
         // Notice that we're using FIXED_TIMESTEP as our delta time
         if (!g_game_over) {
-            g_game_state.player->update(FIXED_TIMESTEP, g_game_state.platforms, PLATFORM_COUNT);
+            g_game_state.player->update(FIXED_TIMESTEP, g_game_state.start_platform, 1);
 
             for (int i = 0; i < DEATH_BOX_COUNT; i++) {
                 if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
-                    end_game();
+                    lose_game();
+                }
+            }
+            for (int i = 0; i < PLATFORM_COUNT; i++) {
+                if (g_game_state.player->check_collision(&g_game_state.platforms[i])) {
+                    win_game();
                 }
             }
         }
@@ -404,14 +423,13 @@ void render()
     g_game_ambience.ground->render(&g_shader_program);
 
 
-
     // ————— PLAYER ————— //
     g_game_state.player->render(&g_shader_program);
 
     // ————— PLATFORM ————— //
     //for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
     //for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
-    
+    //g_game_state.start_platform->render(&g_shader_program);
     
 
     // ————— GENERAL ————— //
