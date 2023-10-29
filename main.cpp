@@ -6,6 +6,7 @@
 #define FIXED_TIMESTEP 0.0166666f
 #define ACC_OF_GRAVITY -0.5f
 #define PLATFORM_COUNT 6
+#define DEATH_BOX_COUNT 13
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -27,7 +28,7 @@ struct GameState
 {
     Entity* player;
     Entity* platforms;
-    Entity* deathbox;
+    Entity* deathboxes;
 };
 
 // ————— CONSTANTS ————— //
@@ -52,7 +53,8 @@ const char  PLAYER_SPRITE_FILEPATH[] = "assets/tardis.png",
 PLATFORM_FILEPATH[] = "assets/platform.png",
 BG_FILEPATH[] = "assets/bg.png",
 PARTICLES_FILEPATH[] = "assets/particles.png",
-GROUND_FILEPATH[] = "assets/ground.png";
+GROUND_FILEPATH[] = "assets/ground.png",
+BOOM_FILEPATH[] = "assets/boom.png";
 
 
 const int NUMBER_OF_TEXTURES = 1;  // to be generated, that is
@@ -75,6 +77,7 @@ GameAmbience g_game_ambience;
 
 SDL_Window* g_display_window;
 bool g_game_is_running = true;
+bool g_game_over = false;
 
 ShaderProgram g_shader_program;
 glm::mat4 g_view_matrix, g_projection_matrix;
@@ -108,6 +111,11 @@ GLuint load_texture(const char* filepath)
     stbi_image_free(image);
 
     return textureID;
+}
+
+void end_game() {
+    g_game_over = true;
+    g_game_state.player->m_texture_id = load_texture(BOOM_FILEPATH);
 }
 
 void initialise()
@@ -148,8 +156,6 @@ void initialise()
     g_game_state.player->set_acceleration(glm::vec3(0.0f, ACC_OF_GRAVITY * 0.1, 0.0f));
     g_game_state.player->set_speed(0.2f);
     g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITE_FILEPATH);
-
-    // Walking
     g_game_state.player->set_height(0.5f);
     g_game_state.player->set_width(0.5f);
 
@@ -164,16 +170,49 @@ void initialise()
     g_game_state.platforms[4].set_position(glm::vec3(3.6f, -3.07f, 0.0f));
     g_game_state.platforms[5].set_position(glm::vec3(4.7f, -1.92f, 0.0f));
 
-
     for (int i = 0; i < PLATFORM_COUNT; i++)
     {
-        g_game_state.platforms[i].m_texture_id = load_texture(PLATFORM_FILEPATH);
         g_game_state.platforms[i].set_scale(glm::vec3(0.6f));
         g_game_state.platforms[i].set_height(0.6f);
         g_game_state.platforms[i].set_width(0.6f);
         g_game_state.platforms[i].update(0.0f, NULL, 0);
     }
 
+
+    // ----- DEATHBOXES ----- //
+    g_game_state.deathboxes = new Entity[DEATH_BOX_COUNT];
+
+    g_game_state.deathboxes[0].set_position(glm::vec3(-2.9f, -2.9f, 0.0f));
+    g_game_state.deathboxes[0].set_scale(glm::vec3(1.0f, 0.5f, 0.0f));
+    g_game_state.deathboxes[0].set_width(0.5f);
+
+    g_game_state.deathboxes[1].set_position(glm::vec3(-2.4f, -2.4f, 0.0f));
+    g_game_state.deathboxes[1].set_scale(glm::vec3(0.5f, 1.0f, 0.0f));
+    g_game_state.deathboxes[1].set_width(0.5f);
+
+    g_game_state.deathboxes[2].set_position(glm::vec3(-1.87f, -1.3f, 0.0f));
+    g_game_state.deathboxes[2].set_scale(glm::vec3(1.0f, 4.0f, 0.0f));
+    g_game_state.deathboxes[2].set_height(4.0f);
+
+    g_game_state.deathboxes[3].set_position(glm::vec3(-1.87f, 0.48f, 0.0f));
+    g_game_state.deathboxes[3].set_scale(glm::vec3(0.5f, 1.0f, 0.0f));
+    g_game_state.deathboxes[3].set_width(0.5f);
+
+    g_game_state.deathboxes[4].set_position(glm::vec3(-1.5f, -0.2f, 0.0f));
+
+    g_game_state.deathboxes[5].set_position(glm::vec3(-1.3f, -0.95f, 0.0f));
+
+    g_game_state.deathboxes[6].set_position(glm::vec3(-1.0f, -1.5f, 0.0f));
+
+    g_game_state.deathboxes[7].set_position(glm::vec3(-0.87f, -1.9f, 0.0f));
+
+
+    for (int i = 0; i < DEATH_BOX_COUNT; i++)
+    {
+        g_game_state.deathboxes[i].update_model_matrix();
+    }
+
+    
 
     // ————— GENERAL ————— //
     glEnable(GL_BLEND);
@@ -290,6 +329,12 @@ void update()
         // Notice that we're using FIXED_TIMESTEP as our delta time
         g_game_state.player->update(FIXED_TIMESTEP, g_game_state.platforms, PLATFORM_COUNT);
 
+        for (int i = 0; i < DEATH_BOX_COUNT; i++) {
+            if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
+                end_game();
+            }
+        }
+
         g_game_ambience.particle1->update(FIXED_TIMESTEP, nullptr, 0);
         g_game_ambience.particle2->update(FIXED_TIMESTEP, nullptr, 0);
 
@@ -312,6 +357,7 @@ void render()
     // ————— GENERAL ————— //
     glClear(GL_COLOR_BUFFER_BIT);
     g_game_ambience.background->render(&g_shader_program);
+
     g_game_ambience.ground->render(&g_shader_program);
     g_game_ambience.particle1->render(&g_shader_program);
     g_game_ambience.particle2->render(&g_shader_program);
@@ -322,6 +368,8 @@ void render()
 
     // ————— PLATFORM ————— //
     //for (int i = 0; i < PLATFORM_COUNT; i++) g_game_state.platforms[i].render(&g_shader_program);
+
+    for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
 
     // ————— GENERAL ————— //
     SDL_GL_SwapWindow(g_display_window);
