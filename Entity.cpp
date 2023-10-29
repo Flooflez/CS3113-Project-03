@@ -1,5 +1,6 @@
 #define GL_SILENCE_DEPRECATION
 #define STB_IMAGE_IMPLEMENTATION
+#define LOG(argument) std::cout << argument << '\n'
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -156,6 +157,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
                 m_velocity.y = 0;
                 m_collided_bottom = true;
             }
+            LOG("collided y");
         }
     }
 }
@@ -180,6 +182,8 @@ void const Entity::check_collision_x(Entity* collidable_entities, int collidable
                 m_velocity.x = 0;
                 m_collided_left = true;
             }
+
+            LOG("collided x");
         }
     }
 }
@@ -218,7 +222,10 @@ bool const Entity::check_collision(Entity* other) const
     float x_distance = fabs(m_position.x - other->m_position.x) - ((m_width + other->m_width) / 2.0f);
     float y_distance = fabs(m_position.y - other->m_position.y) - ((m_height + other->m_height) / 2.0f);
 
-    return x_distance < 0.0f && y_distance < 0.0f;
+    //return x_distance < 0.0f && y_distance < 0.0f;
+
+    //add some buffer to account for floating point errors
+    return x_distance < -0.01f && y_distance < -0.01f;
 }
 
 void const Entity::update_model_matrix() {

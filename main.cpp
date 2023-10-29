@@ -5,7 +5,7 @@
 #define NUMBER_OF_ENEMIES 3
 #define FIXED_TIMESTEP 0.0166666f
 #define ACC_OF_GRAVITY -0.5f
-#define PLATFORM_COUNT 3
+#define PLATFORM_COUNT 5
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -27,6 +27,7 @@ struct GameState
 {
     Entity* player;
     Entity* platforms;
+    Entity* deathbox;
 };
 
 // ————— CONSTANTS ————— //
@@ -50,7 +51,8 @@ const float MILLISECONDS_IN_SECOND = 1000.0;
 const char  PLAYER_SPRITE_FILEPATH[] = "assets/tardis.png",
 PLATFORM_FILEPATH[] = "assets/platform.png",
 BG_FILEPATH[] = "assets/bg.png",
-PARTICLES_FILEPATH[] = "assets/particles.png";
+PARTICLES_FILEPATH[] = "assets/particles.png",
+GROUND_FILEPATH[] = "assets/ground.png";
 
 
 const int NUMBER_OF_TEXTURES = 1;  // to be generated, that is
@@ -64,6 +66,7 @@ struct GameAmbience
     Entity* background;
     Entity* particle1;
     Entity* particle2;
+    Entity* ground;
 };
 
 // ————— VARIABLES ————— //
@@ -154,10 +157,18 @@ void initialise()
     // ————— PLATFORM ————— //
     g_game_state.platforms = new Entity[PLATFORM_COUNT];
 
+    g_game_state.platforms[0].set_position(glm::vec3(0.0f, -2.4f, 0.0f));
+    g_game_state.platforms[1].set_position(glm::vec3(1.0f, -2.0f, 0.0f));
+    g_game_state.platforms[2].set_position(glm::vec3(2.0f, -2.4f, 0.0f));
+    g_game_state.platforms[3].set_position(glm::vec3(1.0f, 1.0f, 0.0f));
+
+
     for (int i = 0; i < PLATFORM_COUNT; i++)
     {
         g_game_state.platforms[i].m_texture_id = load_texture(PLATFORM_FILEPATH);
-        g_game_state.platforms[i].set_position(glm::vec3(i - 1.0f, -3.0f, 0.0f));
+        g_game_state.platforms[i].set_scale(glm::vec3(0.6f));
+        g_game_state.platforms[i].set_height(0.6f);
+        g_game_state.platforms[i].set_width(0.6f);
         g_game_state.platforms[i].update(0.0f, NULL, 0);
     }
 
@@ -184,6 +195,12 @@ void initialise()
     g_game_ambience.particle2->set_scale(glm::vec3(10.0f));
     g_game_ambience.particle2->set_velocity(glm::vec3(1.0f, 0.0f, 0.0f));
     g_game_ambience.particle2->m_texture_id = load_texture(PARTICLES_FILEPATH);
+
+    g_game_ambience.ground = new Entity();
+    g_game_ambience.ground->set_position(glm::vec3(0.0f));
+    g_game_ambience.ground->set_scale(glm::vec3(10.0f));
+    g_game_ambience.ground->m_texture_id = load_texture(GROUND_FILEPATH);
+    g_game_ambience.ground->update_model_matrix();
 
 }
 
@@ -293,6 +310,7 @@ void render()
     // ————— GENERAL ————— //
     glClear(GL_COLOR_BUFFER_BIT);
     g_game_ambience.background->render(&g_shader_program);
+    g_game_ambience.ground->render(&g_shader_program);
     g_game_ambience.particle1->render(&g_shader_program);
     g_game_ambience.particle2->render(&g_shader_program);
 
