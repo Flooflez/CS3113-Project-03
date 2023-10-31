@@ -55,13 +55,16 @@ PLATFORM_FILEPATH[] = "assets/platform.png",
 BG_FILEPATH[] = "assets/bg.png",
 PARTICLES_FILEPATH[] = "assets/particles.png",
 GROUND_FILEPATH[] = "assets/ground.png",
-BOOM_FILEPATH[] = "assets/boom.png";
+BOOM_FILEPATH[] = "assets/boom.png",
+FONT_FILEPATH[] = "assets/font1.png";
 
 
 const int NUMBER_OF_TEXTURES = 1;  // to be generated, that is
 const GLint LEVEL_OF_DETAIL = 0;  // base image level; Level n is the nth mipmap reduction image
 const GLint TEXTURE_BORDER = 0;  // this value MUST be zero
 
+const std::string DEATH_MESSAGE = "KABOOM! YOU CRASHED!! GAME OVER!!!",
+                  WIN_MESSAGE   = "CONGRATS! YOU SAFELY TIME TRAVELLED!!";
 
 // ----- BACKGROUND ----- //
 struct GameAmbience
@@ -79,12 +82,15 @@ GameAmbience g_game_ambience;
 SDL_Window* g_display_window;
 bool g_game_is_running = true;
 bool g_game_over = false;
+GLuint g_text_texture_id;
 
 ShaderProgram g_shader_program;
 glm::mat4 g_view_matrix, g_projection_matrix;
 
 float g_previous_ticks = 0.0f;
 float g_time_accumulator = 0.0f;
+
+std::string g_display_message;
 
 // ———— GENERAL FUNCTIONS ———— //
 GLuint load_texture(const char* filepath)
@@ -114,10 +120,75 @@ GLuint load_texture(const char* filepath)
     return textureID;
 }
 
+const int FONTBANK_SIZE = 16;
+
+void draw_text(ShaderProgram* program, GLuint font_texture_id, std::string text, float screen_size, float spacing, glm::vec3 position)
+{
+    // Scale the size of the fontbank in the UV-plane
+    // We will use this for spacing and positioning
+    float width = 1.0f / FONTBANK_SIZE;
+    float height = 1.0f / FONTBANK_SIZE;
+
+    // Instead of having a single pair of arrays, we'll have a series of pairs—one for each character
+    // Don't forget to include <vector>!
+    std::vector<float> vertices;
+    std::vector<float> texture_coordinates;
+
+    // For every character...
+    for (int i = 0; i < text.size(); i++) {
+        // 1. Get their index in the spritesheet, as well as their offset (i.e. their position
+        //    relative to the whole sentence)
+        int spritesheet_index = (int)text[i];  // ascii value of character
+        float offset = (screen_size + spacing) * i;
+
+        // 2. Using the spritesheet index, we can calculate our U- and V-coordinates
+        float u_coordinate = (float)(spritesheet_index % FONTBANK_SIZE) / FONTBANK_SIZE;
+        float v_coordinate = (float)(spritesheet_index / FONTBANK_SIZE) / FONTBANK_SIZE;
+
+        // 3. Inset the current pair in both vectors
+        vertices.insert(vertices.end(), {
+            offset + (-0.5f * screen_size), 0.5f * screen_size,
+            offset + (-0.5f * screen_size), -0.5f * screen_size,
+            offset + (0.5f * screen_size), 0.5f * screen_size,
+            offset + (0.5f * screen_size), -0.5f * screen_size,
+            offset + (0.5f * screen_size), 0.5f * screen_size,
+            offset + (-0.5f * screen_size), -0.5f * screen_size,
+            });
+
+        texture_coordinates.insert(texture_coordinates.end(), {
+            u_coordinate, v_coordinate,
+            u_coordinate, v_coordinate + height,
+            u_coordinate + width, v_coordinate,
+            u_coordinate + width, v_coordinate + height,
+            u_coordinate + width, v_coordinate,
+            u_coordinate, v_coordinate + height,
+            });
+    }
+
+    // 4. And render all of them using the pairs
+    glm::mat4 model_matrix = glm::mat4(1.0f);
+    model_matrix = glm::translate(model_matrix, position);
+
+    program->set_model_matrix(model_matrix);
+    glUseProgram(program->get_program_id());
+
+    glVertexAttribPointer(program->get_position_attribute(), 2, GL_FLOAT, false, 0, vertices.data());
+    glEnableVertexAttribArray(program->get_position_attribute());
+    glVertexAttribPointer(program->get_tex_coordinate_attribute(), 2, GL_FLOAT, false, 0, texture_coordinates.data());
+    glEnableVertexAttribArray(program->get_tex_coordinate_attribute());
+
+    glBindTexture(GL_TEXTURE_2D, font_texture_id);
+    glDrawArrays(GL_TRIANGLES, 0, (int)(text.size() * 6));
+
+    glDisableVertexAttribArray(program->get_position_attribute());
+    glDisableVertexAttribArray(program->get_tex_coordinate_attribute());
+}
+
 void lose_game() {
     g_game_over = true;
     g_game_state.player->m_texture_id = load_texture(BOOM_FILEPATH);
     g_game_state.player->update_model_matrix();
+    g_display_message = DEATH_MESSAGE;
 }
 
 void win_game() {
@@ -127,7 +198,7 @@ void win_game() {
 void initialise()
 {
     SDL_Init(SDL_INIT_VIDEO);
-    g_display_window = SDL_CreateWindow("Hello, Entities!",
+    g_display_window = SDL_CreateWindow("Definetly NOT the Tardis (For Legal Reasons)",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_OPENGL);
@@ -293,6 +364,10 @@ void initialise()
     g_game_ambience.ground->m_texture_id = load_texture(GROUND_FILEPATH);
     g_game_ambience.ground->update_model_matrix();
 
+    // ----- TEXT ----- //
+    g_text_texture_id = load_texture(FONT_FILEPATH);
+    g_display_message = WIN_MESSAGE;
+
 }
 
 void process_input()
@@ -428,6 +503,10 @@ void render()
     //for (int i = 0; i < DEATH_BOX_COUNT; i++) g_game_state.deathboxes[i].render(&g_shader_program);
     //g_game_state.start_platform->render(&g_shader_program);
     
+    // ----- TEXT ----- //
+    if (g_game_over) {
+        draw_text(&g_shader_program, g_text_texture_id, g_display_message, 0.25f, 0.0f, glm::vec3(-4.5f, 2.0f, 0.0f));
+    }
 
     // ————— GENERAL ————— //
     SDL_GL_SwapWindow(g_display_window);
