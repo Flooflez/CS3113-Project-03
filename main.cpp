@@ -82,6 +82,7 @@ GameAmbience g_game_ambience;
 SDL_Window* g_display_window;
 bool g_game_is_running = true;
 bool g_game_over = false;
+bool g_player_is_moving = false;
 GLuint g_text_texture_id;
 
 ShaderProgram g_shader_program;
@@ -89,6 +90,8 @@ glm::mat4 g_view_matrix, g_projection_matrix;
 
 float g_previous_ticks = 0.0f;
 float g_time_accumulator = 0.0f;
+
+int g_fuel = 750; //not the gamer drink
 
 std::string g_display_message;
 
@@ -374,6 +377,7 @@ void process_input()
 {
     // VERY IMPORTANT: If nothing is pressed, we don't want to go anywhere
     g_game_state.player->set_movement(glm::vec3(0.0f));
+    g_player_is_moving = false;
 
     SDL_Event event;
     while (SDL_PollEvent(&event))
@@ -403,23 +407,31 @@ void process_input()
 
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
-    if (key_state[SDL_SCANCODE_LEFT])
-    {
-        g_game_state.player->set_acceleration_x(-0.15f);
-    }
-    else if (key_state[SDL_SCANCODE_RIGHT])
-    {
-        g_game_state.player->set_acceleration_x(0.15f);
+    if (g_fuel > 0) {
+        if (key_state[SDL_SCANCODE_LEFT])
+        {
+            g_player_is_moving = true;
+            g_game_state.player->set_acceleration_x(-0.15f);
+        }
+        else if (key_state[SDL_SCANCODE_RIGHT])
+        {
+            g_player_is_moving = true;
+            g_game_state.player->set_acceleration_x(0.15f);
+        }
+        else {
+            g_game_state.player->set_acceleration_x(0.0f);
+        }
+
+        if (key_state[SDL_SCANCODE_SPACE]) {
+            g_player_is_moving = true;
+            g_game_state.player->set_acceleration_y(0.2f);
+        }
+        else {
+            g_game_state.player->set_acceleration_y(ACC_OF_GRAVITY);
+        }
     }
     else {
         g_game_state.player->set_acceleration_x(0.0f);
-    }
-    
-    
-    if (key_state[SDL_SCANCODE_SPACE]) {
-        g_game_state.player->set_acceleration_y(0.2f);
-    }
-    else {
         g_game_state.player->set_acceleration_y(ACC_OF_GRAVITY);
     }
 
@@ -454,6 +466,10 @@ void update()
         // Notice that we're using FIXED_TIMESTEP as our delta time
         if (!g_game_over) {
             g_game_state.player->update(FIXED_TIMESTEP, g_game_state.start_platform, 1);
+
+            if (g_player_is_moving && g_fuel > 0) {
+                g_fuel -= 1;
+            }
 
             for (int i = 0; i < DEATH_BOX_COUNT; i++) {
                 if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
@@ -507,6 +523,11 @@ void render()
     if (g_game_over) {
         draw_text(&g_shader_program, g_text_texture_id, g_display_message, 0.25f, 0.0f, glm::vec3(-4.5f, 2.0f, 0.0f));
     }
+
+    std::string fuel_label = std::string("Fuel: ");
+    fuel_label.append(std::to_string(g_fuel));
+
+    draw_text(&g_shader_program, g_text_texture_id, fuel_label, 0.25f, 0.0f, glm::vec3(-4.5f, 3.5f, 0.0f));
 
     // ————— GENERAL ————— //
     SDL_GL_SwapWindow(g_display_window);
