@@ -481,14 +481,23 @@ void update()
                 g_fuel -= 1;
             }
 
-            for (int i = 0; i < DEATH_BOX_COUNT; i++) {
-                if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
-                    lose_game();
-                }
+            glm::vec3 player_pos = g_game_state.player->get_position();
+            if (player_pos.x < -5.0f ||
+                player_pos.x > 5.0f ||
+                player_pos.y < -3.6f ||
+                player_pos.y > 3.6f) { //out of bounds check
+                lose_game();
             }
-            for (int i = 0; i < PLATFORM_COUNT; i++) {
-                if (g_game_state.player->check_collision(&g_game_state.platforms[i])) {
-                    win_game();
+            else {
+                for (int i = 0; i < DEATH_BOX_COUNT; i++) {
+                    if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
+                        lose_game();
+                    }
+                }
+                for (int i = 0; i < PLATFORM_COUNT; i++) {
+                    if (g_game_state.player->check_collision(&g_game_state.platforms[i])) {
+                        win_game();
+                    }
                 }
             }
         }
