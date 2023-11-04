@@ -61,7 +61,6 @@ F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 const char  PLAYER_SPRITE_FILEPATH[] = "assets/tardis.png",
-PLATFORM_FILEPATH[] = "assets/platform.png",
 BG_FILEPATH[] = "assets/bg.png",
 PARTICLES_FILEPATH[] = "assets/particles.png",
 GROUND_FILEPATH[] = "assets/ground.png",
@@ -432,7 +431,7 @@ void process_input()
             g_game_state.player->set_acceleration_x(0.0f);
         }
 
-        if (key_state[SDL_SCANCODE_SPACE]) {
+        if (key_state[SDL_SCANCODE_SPACE] || key_state[SDL_SCANCODE_UP]) {
             g_player_is_moving = true;
             g_game_state.player->set_acceleration_y(0.2f);
         }
@@ -444,12 +443,8 @@ void process_input()
         g_game_state.player->set_acceleration_x(0.0f);
         g_game_state.player->set_acceleration_y(ACC_OF_GRAVITY);
     }
-
-    // This makes sure that the player can't move faster diagonally
-    if (glm::length(g_game_state.player->get_movement()) > 1.0f)
-    {
-        g_game_state.player->set_movement(glm::normalize(g_game_state.player->get_movement()));
-    }
+    
+    //let them move faster diagonally since it isn't easier
 }
 
 void update()
@@ -488,7 +483,7 @@ void update()
                 player_pos.y > 3.6f) { //out of bounds check
                 lose_game();
             }
-            else {
+            else { //bad encapsulation but is ok ?
                 for (int i = 0; i < DEATH_BOX_COUNT; i++) {
                     if (g_game_state.player->check_collision(&g_game_state.deathboxes[i])) {
                         lose_game();
